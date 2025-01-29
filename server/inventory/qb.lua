@@ -11,7 +11,7 @@ overrideFunction.methods = retreiveExportsData(inventory, {
             passSource = true,
             effect = function(originalFun, src, name, amount, metadata, slot)
                 TriggerClientEvent('inventory:client:ItemBox', src, name, "add", amount)
-                TriggerClientEvent('qb-inventory:client:ItemBox', src, name, "add", amount)
+                TriggerClientEvent('codem-inventory:client:ItemBox', src, name, "add", amount)
                 return originalFun(src, name, amount, slot, metadata)
             end
         }
@@ -22,27 +22,28 @@ overrideFunction.methods = retreiveExportsData(inventory, {
             passSource = true,
             effect = function(originalFun, src, name, amount, slot)
                 TriggerClientEvent('inventory:client:ItemBox', src, name, "remove", amount)
-                TriggerClientEvent('qb-inventory:client:ItemBox', src, name, "remove", amount)
+                TriggerClientEvent('codem-inventory:client:ItemBox', src, name, "remove", amount)
                 return originalFun(src, name, amount, slot)
             end
         }
     },
     setMetaData = {
-        originalMethod = 'SetItemData',
+        originalMethod = 'SetItemMetadata', -- This might be ignored if not applicable
         modifier = {
             passSource = true,
             effect = function(originalFun, src, slot, data)
                 local item = inventory:GetItemBySlot(src, slot)
-
+    
                 if not item then return end
                 if type(data) ~= 'table' then return end
-
-                originalFun(src, item.name, 'info', data)
+    
+                -- Only call the export for codem-inventory
+                exports['codem-inventory']:SetItemMetadata(src, slot, data)
             end
         }
-    },
+    },    
     canCarryItem = {
-        originalMethod = inventoryName == 'qb-inventory' and 'CanAddItem' or 'HasItem',
+        originalMethod = inventoryName == 'codem-inventory' and 'AddItem' or 'HasItem',
         modifier = {
             passSource = true,
         }

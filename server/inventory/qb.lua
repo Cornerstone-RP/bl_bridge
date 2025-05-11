@@ -44,6 +44,7 @@ overrideFunction.methods = retreiveExportsData(inventory, {
     },    
     canCarryItem = {
         originalMethod = inventoryName == 'codem-inventory' and 'AddItem' or 'HasItem',
+        -- originalMethod = inventoryName == 'qb-inventory' and inventory.CanAddItem and 'CanAddItem' or 'HasItem',
         modifier = {
             passSource = true,
         }
@@ -75,8 +76,8 @@ overrideFunction.methods = retreiveExportsData(inventory, {
 function overrideFunction.registerInventory(id, data)
     local type, name, items, slots, maxWeight in data
 
-    for k,v in ipairs(items) do
-        v.amount = v.amount or 10
+    for k,v in ipairs(items or {}) do
+        v.amount = v.amount or 1
         v.slot = k
     end
 
@@ -86,12 +87,34 @@ function overrideFunction.registerInventory(id, data)
         slots     = slots or #items,
         maxweight = maxWeight
     }
+
+    if type == 'shop' and inventory.CreateShop then
+        inventory:CreateShop({
+            name = name,
+            label = name,
+            slots = slots or #items,
+            items = items
+        })
+    end
 end
 
-utils.register('bl_bridge:validInventory', function(_, invType, invId)
-    local inventory = registeredInventories[('%s-%s'):format(invType, invId)]
-    if not inventory then return end
-    return inventory
+utils.register('bl_bridge:validInventory', function(src, invType, invId)
+    local inventoryData = registeredInventories[('%s-%s'):format(invType, invId)]
+    if not inventoryData then return end
+
+    local isShop = invType == 'shop'
+
+    if isShop and inventory.OpenShop then
+        return inventory:OpenShop(src, inventoryData.label)
+    elseif not isShop and inventory.OpenInventory then
+        return inventory:OpenInventory(src, inventoryData.label, {
+            label = inventoryData.label,
+            slots = inventoryData.slots,
+            maxweight = inventoryData.maxweight,
+        })
+    end
+
+    return inventoryData
 end)
 
 return overrideFunction
